@@ -1,4 +1,5 @@
-// --- Lógica da Tela Principal (Catálogo) ---
+let heroMovieId = null; // Guarda o ID do filme em destaque
+
 async function loadMovies(search = '') {
     const grid = document.getElementById('movieGrid');
     if (!grid) return;
@@ -7,6 +8,17 @@ async function loadMovies(search = '') {
     const movies = await res.json();
     
     grid.innerHTML = '';
+
+    // Coloca o filme mais recente no Banner de Destaque
+    if (movies.length > 0 && search === '') {
+        const hero = movies[0];
+        heroMovieId = hero.id;
+        document.getElementById('heroBanner').style.backgroundImage = `url('${hero.cover}')`;
+        document.getElementById('heroTitle').innerText = hero.title;
+        document.getElementById('heroSynopsis').innerText = hero.synopsis;
+    }
+
+    // Preenche o carrossel
     movies.forEach(movie => {
         const card = document.createElement('div');
         card.className = 'movie-card';
@@ -16,11 +28,17 @@ async function loadMovies(search = '') {
             <img src="${movie.cover}" alt="${movie.title}">
             <div class="movie-info">
                 <h4>${movie.title}</h4>
-                <p style="font-size: 12px; color: #ccc;">${movie.duration} • ${movie.category}</p>
+                <p>${movie.duration} • ${movie.category}</p>
             </div>
         `;
         grid.appendChild(card);
     });
+}
+
+function playHeroMovie() {
+    if (heroMovieId) {
+        window.location.href = `watch.html?id=${heroMovieId}`;
+    }
 }
 
 function searchMovies() {
@@ -58,49 +76,120 @@ async function initPlayer() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
-    // Buscar dados do filme
     const res = await fetch(`/api/movies/${id}`);
     const movie = await res.json();
     
     video.src = movie.video;
-    document.getElementById('movieTitleDisplay').innerText = movie.title;
+    document.getElementById('topMovieTitle').innerText = movie.title;
     document.title = `${movie.title} - PobreFlix`;
 
-    // Controles do Player
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const progressBar = document.getElementById('progressBar');
-    const progressFilled = document.getElementById('progressFilled');
-    const timeDisplay = document.getElementById('timeDisplay');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const playerContainer = document.getElementById('playerContainer');
-
-    function togglePlay() {
-        if (video.paused) { video.play(); playPauseBtn.innerText = '⏸'; }
-        else { video.pause(); playPauseBtn.innerText = '▶'; }
-    }
-
-    playPauseBtn.addEventListener('click', togglePlay);
-    video.addEventListener('click', togglePlay);
-
-    function formatTime(seconds) {
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
-    }
-
-    video.addEventListener('timeupdate', () => {
-        const percent = (video.currentTime / video.duration) * 100;
-        progressFilled.style.width = `${percent}%`;
-        timeDisplay.innerText = `${formatTime(video.currentTime)} / ${formatTime(video.duration || 0)}`;
+    // Retomar de onde parou
+    video.addEventListener('loadedmetadata', () => {
+        if (movie.last_time) video.currentTime = movie.last_time;
     });
 
+    // Salvar progresso
+    setInterval(async () => {
+        if (!video.paused && !video.ended) {
+            await fetch('/api/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ movie_id: id, last_time: video.currentTime })
+            });
+        }
+    }, 5000); 
+
+    // --- MÁGICA: Ocultar controles quando parado ---
+    let idleTimeout;
+    const playerContainer = document.getElementById('playerContainer');
+    
+    function resetIdleTimer() {
+        playerContainer.classList.remove('idle');
+        clearTimeout(idleTimeout);
+        idleTimeout = setTimeout(() => {
+            if (!video.paused) { playerContainer.classList.add('idle'); }
+        }, 3000); // Some após 3 segundos
+    }
+    
+    playerContainer.addEventListener('mousemove', resetIdleTimer);
+    playerContainer.addEventListener('touchstart', resetIdleTimer);
+    video.addEventListener('play', resetIdleTimer);
+
+    // --- CONTROLES COM ÍCONES NOVOS ---
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const playIcon = document.getElementById('playIcon');
+    
+    function togglePlay() {
+        if (video.paused) { 
+            video.play(); playIcon.innerText = 'pause'; 
+        } else { 
+            video.pause(); playIcon.innerText = 'play_arrow'; 
+        }
+    }
+    playPauseBtn.onclick = togglePlay;
+    video.onclick = togglePlay; // Clicar no vídeo também pausa
+
+    // Tempo
+    const progressFilled = document.getElementById('progressFilled');
+    const timeDisplay = document.getElementById('timeDisplay');
+    
+    video.ontimeupdate = () => {
+        const percent = (video.currentTime / video.duration) * 100;
+        progressFilled.style.width = `${percent}%`;
+        
+        const m = Math.floor(video.currentTime / 60);
+        const s = Math.floor(video.currentTime % 60);
+        const totalM = Math.floor(video.duration / 60) || 0;
+        const totalS = Math.floor(video.duration % 60) || 0;
+        timeDisplay.innerText = `${m}:${s < 10 ? '0' : ''}${s} / ${totalM}:${totalS < 10 ? '0' : ''}${totalS}`;
+    };
+
+    // Barra de Progresso com clique corrigido
+    const progressBar = document.getElementById('progressBar');
     progressBar.addEventListener('click', (e) => {
-        const newTime = (e.offsetX / progressBar.offsetWidth) * video.duration;
+        const rect = progressBar.getBoundingClientRect();
+        const newTime = ((e.clientX - rect.left) / rect.width) * video.duration;
         video.currentTime = newTime;
     });
 
-    fullscreenBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) { playerContainer.requestFullscreen(); }
-        else { document.exitFullscreen(); }
-    });
+    // Avançar / Voltar
+    document.getElementById('rewindBtn').onclick = () => video.currentTime = Math.max(0, video.currentTime - 10);
+    document.getElementById('forwardBtn').onclick = () => video.currentTime = Math.min(video.duration, video.currentTime + 10);
+
+    // Volume e Mute
+    const muteBtn = document.getElementById('muteBtn');
+    const volumeIcon = document.getElementById('volumeIcon');
+    const volumeBar = document.getElementById('volumeBar');
+    
+    muteBtn.onclick = () => {
+        if (video.volume > 0) {
+            video.dataset.vol = video.volume; // Salva o volume anterior
+            video.volume = 0;
+            volumeBar.value = 0;
+            volumeIcon.innerText = 'volume_off';
+        } else {
+            video.volume = video.dataset.vol || 1;
+            volumeBar.value = video.volume;
+            volumeIcon.innerText = 'volume_up';
+        }
+    };
+    
+    volumeBar.oninput = (e) => {
+        video.volume = e.target.value;
+        if (video.volume == 0) volumeIcon.innerText = 'volume_off';
+        else if (video.volume < 0.5) volumeIcon.innerText = 'volume_down';
+        else volumeIcon.innerText = 'volume_up';
+    };
+
+    // Tela Cheia
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const fsIcon = document.getElementById('fsIcon');
+    
+    fullscreenBtn.onclick = () => {
+        if (!document.fullscreenElement) { 
+            playerContainer.requestFullscreen(); fsIcon.innerText = 'fullscreen_exit';
+        } else { 
+            document.exitFullscreen(); fsIcon.innerText = 'fullscreen';
+        }
+    };
 }

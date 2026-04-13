@@ -22,6 +22,12 @@ db.run(`CREATE TABLE IF NOT EXISTS movies (
     video TEXT
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS progress (
+    movie_id INTEGER PRIMARY KEY,
+    last_time REAL,
+    FOREIGN KEY(movie_id) REFERENCES movies(id)
+)`);
+
 // Configuração do Multer (Upload de arquivos)
 const storage = multer.diskStorage({
     destination: './public/uploads/',
@@ -66,9 +72,25 @@ app.get('/api/movies', (req, res) => {
 
 // Rota: Obter um único filme
 app.get('/api/movies/:id', (req, res) => {
-    db.get(`SELECT * FROM movies WHERE id = ?`, [req.params.id], (err, row) => {
+    const sql = `
+        SELECT m.*, p.last_time 
+        FROM movies m 
+        LEFT JOIN progress p ON m.id = p.movie_id 
+        WHERE m.id = ?`;
+    db.get(sql, [req.params.id], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(row);
+    });
+});
+
+// Rota: Salvar histórico de visualização
+app.post('/api/progress', (req, res) => {
+    const { movie_id, last_time } = req.body;
+    // O REPLACE INTO no SQLite insere ou atualiza se já existir o movie_id
+    const sql = `REPLACE INTO progress (movie_id, last_time) VALUES (?, ?)`;
+    db.run(sql, [movie_id, last_time], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Progresso salvo!' });
     });
 });
 
