@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistindo - PobreFlix</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="player-container" id="playerContainer">
+        <video id="pobrePlayer"></video>
+        
+        <div class="player-controls">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-filled" id="progressFilled"></div>
+            </div>
+            <div class="controls-buttons">
+                <div>
+                    <button class="control-btn" id="playPauseBtn">▶</button>
+                    <span id="timeDisplay" style="font-size: 14px; margin-left: 10px;">00:00 / 00:00</span>
+                </div>
+                <h3 id="movieTitleDisplay" style="font-size: 16px; font-weight: normal;">Carregando...</h3>
+                <button class="control-btn" id="fullscreenBtn">⛶</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>initPlayer();</script>
+</body>
+</html>

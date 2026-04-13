@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PobreFlix</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">PobreFlix</a>
+        <div class="nav-actions">
+            <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" id="searchInput" placeholder="Pesquisar filme..." onkeyup="searchMovies()">
+            </div>
+            <a href="admin.html" class="btn">Adicionar Filme</a>
+        </div>
+    </header>
+    <div class="container">
+        <h2>Adicionados Recentemente</h2>
+        <div class="movie-grid" id="movieGrid"></div>
+    </div>
+    <script src="script.js"></script>
+    <script>loadMovies();</script>
+</body>
+</html>
