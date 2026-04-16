@@ -19,6 +19,7 @@ db.run(`CREATE TABLE IF NOT EXISTS movies (
     duration TEXT,
     synopsis TEXT,
     cover TEXT,
+    hero_image TEXT, 
     video TEXT
 )`);
 
@@ -41,15 +42,20 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Rota: Cadastrar Filme
-app.post('/api/movies', upload.fields([{ name: 'cover' }, { name: 'video' }]), (req, res) => {
+app.post('/api/movies', upload.fields([
+    { name: 'cover' }, 
+    { name: 'video' }, 
+    { name: 'hero' } // Novo campo
+]), (req, res) => {
     const { title, category, duration, synopsis } = req.body;
-    const coverPath = `/uploads/${req.files['cover'][0].filename}`;
-    const videoPath = `/uploads/${req.files['video'][0].filename}`;
+    const coverPath = req.files['cover'] ? `/uploads/${req.files['cover'][0].filename}` : null;
+    const heroPath = req.files['hero'] ? `/uploads/${req.files['hero'][0].filename}` : null;
+    const videoPath = req.files['video'] ? `/uploads/${req.files['video'][0].filename}` : null;
 
-    const sql = `INSERT INTO movies (title, category, duration, synopsis, cover, video) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [title, category, duration, synopsis, coverPath, videoPath], function(err) {
+    const sql = `INSERT INTO movies (title, category, duration, synopsis, cover, hero_image, video) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(sql, [title, category, duration, synopsis, coverPath, heroPath, videoPath], function(err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Filme adicionado ao PobreFlix!' });
+        res.json({ id: this.lastID, message: 'Filme cadastrado!' });
     });
 });
 
@@ -70,7 +76,7 @@ app.get('/api/movies', (req, res) => {
     });
 });
 
-// Rota: Obter um único filme
+// Rota: Obter um único filme (Para o Player e para a Edição)
 app.get('/api/movies/:id', (req, res) => {
     const sql = `
         SELECT m.*, p.last_time 
@@ -80,6 +86,29 @@ app.get('/api/movies/:id', (req, res) => {
     db.get(sql, [req.params.id], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(row);
+    });
+});
+
+// Rota: Obter um único filme
+app.put('/api/movies/:id', upload.fields([
+    { name: 'cover' }, 
+    { name: 'video' }, 
+    { name: 'hero' }
+]), (req, res) => {
+    const { title, category, duration, synopsis } = req.body;
+    const id = req.params.id;
+
+    // Primeiro pegamos os dados atuais para não apagar os caminhos dos arquivos se não houver novo upload
+    db.get(`SELECT * FROM movies WHERE id = ?`, [id], (err, row) => {
+        const cover = req.files['cover'] ? `/uploads/${req.files['cover'][0].filename}` : row.cover;
+        const hero = req.files['hero'] ? `/uploads/${req.files['hero'][0].filename}` : row.hero_image;
+        const video = req.files['video'] ? `/uploads/${req.files['video'][0].filename}` : row.video;
+
+        const sql = `UPDATE movies SET title=?, category=?, duration=?, synopsis=?, cover=?, hero_image=?, video=? WHERE id=?`;
+        db.run(sql, [title, category, duration, synopsis, cover, hero, video, id], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Filme atualizado com sucesso!' });
+        });
     });
 });
 

@@ -16,7 +16,16 @@
                 <input type="text" id="searchInput" placeholder="Títulos, gente e gêneros" onkeyup="searchMovies()">
             </div>
             <a href="admin.html" class="btn" style="background: rgba(109, 109, 110, 0.7); color: white;">+ Adicionar</a>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="Perfil" class="profile-avatar">
+            
+            <div class="profile-container" onclick="toggleDropdown(event)">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="Perfil" class="profile-avatar">
+                <div class="profile-dropdown" id="profileDropdown">
+                    <a href="#">Editar Perfil</a>
+                    <a href="#">Configurações</a>
+                    <hr style="border-color: #333; margin: 5px 0;">
+                    <a href="manage.html">Gerenciar Filmes</a>
+                </div>
+            </div>
         </div>
     </header>
 

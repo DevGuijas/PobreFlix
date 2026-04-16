@@ -148,3 +148,28 @@ video { width: 100%; height: 100%; object-fit: contain; }
     .controls-left, .controls-right { gap: 15px; }
     .control-btn .material-symbols-outlined { font-size: 28px; }
 }
+
+/* --- Menu de Perfil (Dropdown) --- */
+.profile-container { position: relative; cursor: pointer; }
+.profile-dropdown {
+    position: absolute; right: 0; top: 50px; background: rgba(0,0,0,0.9);
+    border: 1px solid #333; border-radius: 4px; padding: 10px 0;
+    display: none; flex-direction: column; width: 170px; z-index: 200;
+}
+.profile-dropdown.show { display: flex; }
+.profile-dropdown a {
+    color: white; text-decoration: none; padding: 10px 15px; font-size: 14px;
+    transition: background 0.2s;
+}
+.profile-dropdown a:hover { background: #333; }
+
+/* --- Spinner de Loading Estilo Netflix --- */
+.loading-spinner {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 60px; height: 60px; border: 5px solid rgba(229, 9, 20, 0.3);
+    border-top-color: #E50914; border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: none; /* Escondido por padrão */
+    z-index: 50; pointer-events: none;
+}
+@keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }

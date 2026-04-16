@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>Upload - PobreFlix</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <header>
         <a href="/" class="logo">PobreFlix</a>
     </header>
     <div class="container">
         <form id="uploadForm" class="admin-form">
-            <h2>Cadastrar Novo Filme</h2>
-            <input type="text" id="title" placeholder="Nome do Filme" required>
-            <input type="text" id="category" placeholder="Categoria (ex: Ação, Terror)" required>
-            <input type="text" id="duration" placeholder="Duração (ex: 1h 45m)" required>
+            <h2 id="formTitle">Cadastrar Novo Filme</h2>
+            <input type="hidden" id="movieId"> <input type="text" id="title" placeholder="Nome do Filme" required>
+            <input type="text" id="category" placeholder="Categoria" required>
+            <input type="text" id="duration" placeholder="Duração" required>
             <textarea id="synopsis" placeholder="Sinopse" rows="3" required></textarea>
-            
-            <label>Foto da Capa:</label>
-            <input type="file" id="cover" accept="image/*" required>
-            
+
+            <label>Foto da Capa (Vertical):</label>
+            <input type="file" id="cover" accept="image/*">
+
+            <label>Imagem do Banner (Horizontal - Netflix Style):</label>
+            <input type="file" id="hero" accept="image/*">
+
             <label>Arquivo do Vídeo:</label>
-            <input type="file" id="video" accept="video/*" required>
-            
-            <button type="submit" class="btn" style="width: 100%;">Salvar Filme</button>
+            <input type="file" id="video" accept="video/*">
+
+            <button type="submit" id="saveBtn" class="btn" style="width: 100%; background: #E50914;">Salvar
+                Filme</button>
+            <a href="/" class="btn"
+                style="width: 100%; display: block; text-align: center; margin-top: 10px; background: #333;">Cancelar</a>
         </form>
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>
